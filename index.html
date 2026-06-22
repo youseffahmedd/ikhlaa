@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="الأخلاء">
+<meta name="theme-color" content="#1B3A2B">
+<title>الأخلاء</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Amiri:wght@400;700&family=Lateef:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:        #1B3A2B;
+    --ink-deep:   #102218;
+    --ink-soft:   #2F5440;
+    --parchment:  #F7F2E7;
+    --parchment2: #EFE7D5;
+    --gold:       #B8923D;
+    --gold-deep:  #8C6D27;
+    --gold-bg:    #FBF3DE;
+    --sage:       #8FA888;
+    --charcoal:   #2A2520;
+    --muted:      #7A7468;
+    --line:       #DCD3BC;
+    --surface:    #FBF6EA;
+    --radius:     16px;
+    --radius-sm:  11px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Amiri', 'Tajawal', 'Segoe UI', serif;
+    background: var(--parchment);
+    color: var(--charcoal);
+    min-height: 100vh;
+    padding-bottom: 96px;
+    font-size: 16px;
+    position: relative;
+  }
+  /* subtle geometric texture */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image:
+      repeating-linear-gradient(45deg, var(--ink) 0, var(--ink) 1px, transparent 1px, transparent 26px),
+      repeating-linear-gradient(-45deg, var(--ink) 0, var(--ink) 1px, transparent 1px, transparent 26px);
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  .app-header {
+    background: linear-gradient(180deg, var(--ink-deep), var(--ink) 70%);
+    padding: 22px 18px 16px;
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 3px solid var(--gold);
+    box-shadow: 0 4px 18px rgba(16,34,24,0.25);
+  }
+  .ornament {
+    text-align: center; color: var(--gold);
+    font-size: 13px; letter-spacing: 6px;
+    opacity: 0.85; margin-bottom: 2px;
+  }
+  .app-title {
+    font-family: 'Amiri', serif;
+    font-size: 32px; font-weight: 700;
+    text-align: center; color: var(--parchment);
+    margin-bottom: 12px; letter-spacing: 1px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  }
+  .date-nav {
+    display: flex; align-items: center;
+    justify-content: space-between; gap: 10px;
+  }
+  .date-nav button {
+    background: rgba(184,146,61,0.18);
+    border: 1.5px solid rgba(184,146,61,0.55);
+    color: var(--gold); border-radius: 10px;
+    width: 40px; height: 40px; font-size: 20px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-family: 'Amiri', serif;
+    transition: background 0.15s;
+  }
+  .date-nav button:active { background: rgba(184,146,61,0.35); }
+  .date-info { text-align: center; flex: 1; }
+  .date-main { font-family: 'Amiri', serif; font-size: 16px; font-weight: 700; color: var(--parchment); }
+  .date-hijri { font-family: 'Amiri', serif; font-size: 16px; font-weight: 700; color: var(--gold); margin-top: 4px; }
+
+  .offline-banner {
+    display: none; background: var(--gold-bg); color: var(--gold-deep);
+    text-align: center; padding: 8px 12px; font-size: 13.5px; font-weight: 700;
+    font-family: 'Amiri', serif;
+    border-bottom: 1px solid var(--gold);
+  }
+  .offline-banner.show { display: block; }
+
+  .sync-bar {
+    display: flex; align-items: center; justify-content: center;
+    gap: 7px; padding: 8px 16px 4px; font-size: 13px; color: var(--muted);
+    font-family: 'Amiri', serif;
+    position: relative; z-index: 1;
+  }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #aaa; flex-shrink: 0; }
+  .sync-dot.connected { background: var(--sage); box-shadow: 0 0 6px rgba(143,168,136,0.7); }
+  .sync-dot.syncing { background: var(--gold); animation: pulse 1s infinite; }
+  .sync-dot.offline { background: #b5503f; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ── SCORES ── */
+  .scores {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; padding: 14px 16px 10px;
+    position: relative; z-index: 1;
+  }
+  .score-card {
+    background: var(--surface); border-radius: var(--radius);
+    border: 1px solid var(--line); padding: 16px 14px 14px;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .score-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  }
+  .score-card.yousef::before { background: linear-gradient(90deg, var(--ink-soft), var(--ink)); }
+  .score-card.taha::before   { background: linear-gradient(90deg, var(--gold), var(--gold-deep)); }
+  .score-name {
+    font-family: 'Amiri', serif; font-size: 17px; font-weight: 700;
+    color: var(--charcoal); margin-bottom: 6px;
+  }
+  .score-pct  { font-size: 30px; font-weight: 800; color: var(--ink); line-height: 1; }
+  .score-card.taha .score-pct { color: var(--gold-deep); }
+  .score-bar  { height: 7px; border-radius: 4px; background: var(--parchment2); margin-top: 10px; overflow: hidden; }
+  .score-fill-y { height: 100%; background: linear-gradient(90deg, var(--ink-soft), var(--ink)); border-radius: 4px; transition: width 0.4s; }
+  .score-fill-t { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-deep)); border-radius: 4px; transition: width 0.4s; }
+
+  /* ── TASKS ── */
+  .table-wrap { padding: 0 14px; position: relative; z-index: 1; }
+  .section-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 22px 2px 9px;
+  }
+  .section-header .diamond {
+    width: 9px; height: 9px; background: var(--gold);
+    transform: rotate(45deg); flex-shrink: 0;
+  }
+  .section-header span {
+    font-family: 'Amiri', serif;
+    font-size: 18px; font-weight: 700;
+    color: var(--ink); letter-spacing: 0.2px;
+  }
+  .section-header .rule {
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--line), transparent);
+  }
+  .col-headers {
+    display: grid; grid-template-columns: 1fr 80px 80px;
+    gap: 4px; padding: 0 10px 6px;
+  }
+  .col-headers span {
+    font-family: 'Amiri', serif;
+    font-size: 14px; font-weight: 700;
+    color: var(--muted); text-align: center;
+    text-transform: none;
+  }
+  .col-headers span:first-child { visibility: hidden; }
+
+  .task-card {
+    background: var(--surface); border-radius: var(--radius-sm);
+    border: 1px solid var(--line); margin-bottom: 6px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(42,37,32,0.04);
+  }
+  .task-row {
+    display: grid; grid-template-columns: 1fr 80px 80px;
+    align-items: center; gap: 4px;
+    padding: 12px 14px; min-height: 58px;
+  }
+  .task-row + .task-row { border-top: 1px solid var(--line); }
+  .task-name { font-family: 'Amiri', serif; font-size: 16px; color: var(--charcoal); line-height: 1.3; font-weight: 500; unicode-bidi: plaintext; }
+  .cell { display: flex; justify-content: center; align-items: center; }
+
+  .check-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 2px solid var(--line); background: var(--surface);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 17px; transition: all 0.15s; flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .check-btn.checked-y { background: linear-gradient(135deg, var(--ink-soft), var(--ink)); border-color: var(--ink); color: var(--parchment); }
+  .check-btn.checked-t { background: linear-gradient(135deg, var(--gold), var(--gold-deep)); border-color: var(--gold-deep); color: var(--parchment); }
+
+  .num-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .num-field {
+    width: 70px; height: 40px;
+    text-align: center;
+    font-size: 17px; font-weight: 700;
+    font-family: 'Amiri', serif;
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--charcoal);
+    -moz-appearance: textfield;
+    transition: border-color 0.15s, background 0.15s;
+    cursor: text;
+  }
+  .num-field::-webkit-outer-spin-button,
+  .num-field::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .num-field:focus { outline: none; border-color: var(--ink); background: var(--parchment2); }
+  .num-field.has-val-y { border-color: var(--ink-soft); background: #EAF0EA; color: var(--ink); }
+  .num-field.has-val-t { border-color: var(--gold); background: var(--gold-bg); color: var(--gold-deep); }
+  .num-field.has-val-t:focus { border-color: var(--gold-deep); }
+  .num-progress { width: 70px; height: 4px; background: var(--parchment2); border-radius: 2px; overflow: hidden; }
+  .num-progress-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+  .num-max-lbl { font-family: 'Amiri', serif; font-size: 11.5px; color: var(--muted); }
+
+  /* ── BOTTOM BAR ── */
+  .bottom-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--surface); border-top: 1.5px solid var(--gold);
+    padding: 12px 16px; display: flex; gap: 10px; align-items: center; z-index: 100;
+    box-shadow: 0 -4px 16px rgba(42,37,32,0.06);
+  }
+  .save-btn {
+    flex: 1; padding: 15px; background: linear-gradient(135deg, var(--ink-soft), var(--ink-deep));
+    color: var(--parchment); border: none; border-radius: var(--radius-sm);
+    font-size: 17px; font-weight: 700; cursor: pointer;
+    font-family: 'Amiri', serif;
+    box-shadow: 0 2px 8px rgba(27,58,43,0.3);
+  }
+  .save-btn:active { transform: translateY(1px); }
+  .saved-msg { font-family: 'Amiri', serif; font-size: 14px; color: var(--ink); text-align: center; min-width: 62px; font-weight: 700; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="mainApp">
+  <div class="app-header">
+    <div class="ornament">۞</div>
+    <div class="app-title">الأخلاء</div>
+    <div class="date-nav">
+      <button onclick="changeDay(-1)">‹</button>
+      <div class="date-info">
+        <div class="date-main" id="dateMain">...</div>
+        <div class="date-hijri" id="dateHijri">...</div>
+      </div>
+      <button onclick="changeDay(1)">›</button>
+    </div>
+  </div>
+
+  <div class="offline-banner" id="offlineBanner">⚠️ أنت غير متصل — التغييرات محفوظة محلياً وستُزامن عند الاتصال</div>
+
+  <div class="sync-bar">
+    <div class="sync-dot" id="syncDot"></div>
+    <span id="syncLabel">جارٍ الاتصال...</span>
+  </div>
+
+  <div class="scores">
+    <div class="score-card yousef">
+      <div class="score-name">يوسف</div>
+      <div class="score-pct" id="scoreY">0%</div>
+      <div class="score-bar"><div class="score-fill-y" id="barY" style="width:0%"></div></div>
+    </div>
+    <div class="score-card taha">
+      <div class="score-name">طه</div>
+      <div class="score-pct" id="scoreT">0%</div>
+      <div class="score-bar"><div class="score-fill-t" id="barT" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="table-wrap" id="taskList"></div>
+
+  <div class="bottom-bar">
+    <button class="save-btn" onclick="saveData()">💾 حفظ اليوم</button>
+    <div class="saved-msg" id="savedMsg"></div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, onValue, off } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBQlHtoBtdHd5sOU_06jj7X3XZXIlLCmlU",
+  authDomain: "tracker-84f19.firebaseapp.com",
+  databaseURL: "https://tracker-84f19-default-rtdb.firebaseio.com",
+  projectId: "tracker-84f19",
+  storageBucket: "tracker-84f19.firebasestorage.app",
+  messagingSenderId: "969080406354",
+  appId: "1:969080406354:web:85bd900251753c7cb07a8b",
+};
+
+const TASKS = [
+  { id:'fajr',       name:'صلاة الفجر',            type:'check', section:'الصلوات' },
+  { id:'zuhr',       name:'صلاة الظهر',            type:'check', section:'' },
+  { id:'asr',        name:'صلاة العصر',            type:'check', section:'' },
+  { id:'maghrib',    name:'صلاة المغرب',           type:'check', section:'' },
+  { id:'isha',       name:'صلاة العشاء',           type:'check', section:'' },
+  { id:'qiyam',      name:'قيام الليل',            type:'check', section:'' },
+  { id:'duha',       name:'الضحى',                 type:'check', section:'' },
+  { id:'rawatib',    name:'السنن الرواتب',          type:'num', max:12, section:'' },
+  { id:'quran',      name:'ورد القرآن',            type:'check', section:'القرآن الكريم' },
+  { id:'thikr',      name:'الذكر دبر كل صلاة',     type:'num', max:5,  section:'الأذكار والأوراد' },
+  { id:'sabah',      name:'أذكار الصباح',           type:'check', section:'' },
+  { id:'masa',       name:'أذكار المساء',           type:'check', section:'' },
+  { id:'nawm',       name:'أذكار النوم',            type:'num', max:2,  section:'' },
+  { id:'salawat',    name:'الصلاة على النبي ﷺ',    type:'num', max:100, section:'' },
+  { id:'istighfar',  name:'الاستغفار',              type:'num', max:200, section:'' },
+  { id:'baqiyat',    name:'باقيات صالحات',          type:'num', max:500, section:'' },
+  { id:'binaa',      name:'البناء المنهجي',         type:'check', section:'طلب العلم' },
+];
+
+function localSave(key, data) { try { localStorage.setItem('day_' + key, JSON.stringify(data)); } catch(e) {} }
+function localLoad(key) { try { const d = localStorage.getItem('day_' + key); return d ? JSON.parse(d) : null; } catch(e) { return null; } }
+function queueSync(key) {
+  try { const q = JSON.parse(localStorage.getItem('sync_queue') || '[]'); if (!q.includes(key)) { q.push(key); localStorage.setItem('sync_queue', JSON.stringify(q)); } } catch(e) {}
+}
+function dequeue(key) {
+  try { let q = JSON.parse(localStorage.getItem('sync_queue') || '[]'); q = q.filter(k => k !== key); localStorage.setItem('sync_queue', JSON.stringify(q)); } catch(e) {}
+}
+function getQueue() { try { return JSON.parse(localStorage.getItem('sync_queue') || '[]'); } catch(e) { return []; } }
+
+function updateScore(data) {
+  let total = TASKS.length, yPts = 0, tPts = 0;
+  TASKS.forEach(t => {
+    if (t.type === 'check') {
+      if (data[t.id + '_Y']) yPts++;
+      if (data[t.id + '_T']) tPts++;
+    } else {
+      yPts += Math.min(Number(data[t.id + '_Y']) || 0, t.max) / t.max;
+      tPts += Math.min(Number(data[t.id + '_T']) || 0, t.max) / t.max;
+    }
+  });
+  const yp = Math.round(yPts / total * 100);
+  const tp = Math.round(tPts / total * 100);
+  document.getElementById('scoreY').textContent = yp + '%';
+  document.getElementById('scoreT').textContent = tp + '%';
+  document.getElementById('barY').style.width = yp + '%';
+  document.getElementById('barT').style.width = tp + '%';
+}
+
+function dateKey(offset) { const d = new Date(); d.setDate(d.getDate() + offset); return d.toISOString().slice(0, 10); }
+function dateDisplay(offset) {
+  const d = new Date(); d.setDate(d.getDate() + offset);
+  let hijri = '';
+  try {
+    hijri = d.toLocaleDateString('ar-SA-u-ca-islamic', { day:'numeric', month:'long', year:'numeric' });
+  } catch(e) {}
+  return { main: d.toLocaleDateString('ar-EG', { weekday:'long', day:'numeric', month:'long', year:'numeric' }), hijri };
+}
+
+function setSyncState(state) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  const banner = document.getElementById('offlineBanner');
+  dot.className = 'sync-dot ' + state;
+  if (state === 'connected') { lbl.textContent = 'متصل ✓'; banner.classList.remove('show'); }
+  else if (state === 'syncing') { lbl.textContent = 'جارٍ المزامنة...'; banner.classList.remove('show'); }
+  else { lbl.textContent = 'غير متصل — محفوظ محلياً'; banner.classList.add('show'); }
+}
+
+function renderTasks(data) {
+  const list = document.getElementById('taskList');
+  list.innerHTML = '';
+  let lastSection = null, card = null;
+
+  TASKS.forEach(t => {
+    if (t.section !== '' && t.section !== lastSection) {
+      lastSection = t.section;
+      const sh = document.createElement('div');
+      sh.className = 'section-header';
+      sh.innerHTML = `<div class="diamond"></div><span>${t.section}</span><div class="rule"></div>`;
+      list.appendChild(sh);
+      const ch = document.createElement('div');
+      ch.className = 'col-headers';
+      ch.innerHTML = '<span></span><span>يوسف</span><span>طه</span>';
+      list.appendChild(ch);
+      card = document.createElement('div');
+      card.className = 'task-card';
+      list.appendChild(card);
+    } else if (t.section === '' && card === null) {
+      card = document.createElement('div');
+      card.className = 'task-card';
+      list.appendChild(card);
+    }
+
+    const row = document.createElement('div');
+    row.className = 'task-row';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'task-name';
+    nameEl.textContent = t.name;
+    row.appendChild(nameEl);
+
+    ['Y', 'T'].forEach(p => {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+
+      if (t.type === 'check') {
+        const btn = document.createElement('button');
+        const isChecked = !!data[t.id + '_' + p];
+        btn.className = 'check-btn' + (isChecked ? ` checked-${p.toLowerCase()}` : '');
+        btn.textContent = isChecked ? '✓' : '';
+        btn.onclick = () => {
+          currentData[t.id + '_' + p] = !currentData[t.id + '_' + p];
+          const c = !!currentData[t.id + '_' + p];
+          btn.className = 'check-btn' + (c ? ` checked-${p.toLowerCase()}` : '');
+          btn.textContent = c ? '✓' : '';
+          updateScore(currentData);
+        };
+        cell.appendChild(btn);
+      } else {
+        const cur = Number(data[t.id + '_' + p]) || 0;
+        const pct = Math.min(cur / t.max, 1);
+        const isGold = p === 'T';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'num-wrap';
+
+        const inp = document.createElement('input');
+        inp.type = 'number';
+        inp.min = 0; inp.max = t.max;
+        inp.value = cur || '';
+        inp.placeholder = '0';
+        inp.className = 'num-field' + (cur > 0 ? (isGold ? ' has-val-t' : ' has-val-y') : '');
+
+        const progressBar = document.createElement('div');
+        progressBar.className = 'num-progress';
+        const progressFill = document.createElement('div');
+        progressFill.className = 'num-progress-fill';
+        progressFill.style.width = (pct * 100) + '%';
+        progressFill.style.background = isGold ? 'var(--gold)' : 'var(--ink-soft)';
+        progressBar.appendChild(progressFill);
+
+        const maxLbl = document.createElement('div');
+        maxLbl.className = 'num-max-lbl';
+        maxLbl.textContent = 'من ' + t.max;
+
+        inp.oninput = () => {
+          const v = Math.min(Math.max(Number(inp.value) || 0, 0), t.max);
+          currentData[t.id + '_' + p] = v;
+          progressFill.style.width = (Math.min(v / t.max, 1) * 100) + '%';
+          inp.className = 'num-field' + (v > 0 ? (isGold ? ' has-val-t' : ' has-val-y') : '');
+          updateScore(currentData);
+        };
+
+        wrap.appendChild(inp);
+        wrap.appendChild(progressBar);
+        wrap.appendChild(maxLbl);
+        cell.appendChild(wrap);
+      }
+      row.appendChild(cell);
+    });
+    card.appendChild(row);
+  });
+
+  updateScore(data);
+}
+
+let db = null, roomCode = 'yousef-taha-shared';
+let myPerson, dayOffset = 0;
+let currentData = {};
+let dbRef = null;
+
+async function flushQueue() {
+  if (!db || !navigator.onLine) return;
+  const queue = getQueue();
+  for (const key of queue) {
+    const data = localLoad(key);
+    if (data) { try { await set(ref(db, `rooms/${roomCode}/days/${key}`), data); dequeue(key); } catch(e) {} }
+  }
+}
+
+function loadDay() {
+  const key = dateKey(dayOffset);
+  const { main, hijri } = dateDisplay(dayOffset);
+  document.getElementById('dateMain').textContent = main;
+  document.getElementById('dateHijri').textContent = hijri;
+
+  if (dbRef) { off(dbRef); dbRef = null; }
+
+  const cached = localLoad(key);
+  currentData = cached || {};
+  renderTasks(currentData);
+
+  if (!navigator.onLine || !db) { setSyncState('offline'); return; }
+
+  setSyncState('syncing');
+  dbRef = ref(db, `rooms/${roomCode}/days/${key}`);
+  onValue(dbRef, snap => {
+    const remote = snap.val() || {};
+    const queue = getQueue();
+    if (queue.includes(key)) {
+      set(ref(db, `rooms/${roomCode}/days/${key}`), currentData).then(() => dequeue(key)).catch(() => {});
+    } else {
+      currentData = remote;
+      localSave(key, currentData);
+      renderTasks(currentData);
+    }
+    setSyncState('connected');
+  }, () => setSyncState('offline'));
+}
+
+window.saveData = async function() {
+  const key = dateKey(dayOffset);
+  localSave(key, currentData);
+  const msg = document.getElementById('savedMsg');
+
+  if (!navigator.onLine || !db) {
+    queueSync(key);
+    msg.textContent = '📴 محلياً';
+    setTimeout(() => msg.textContent = '', 3000);
+    return;
+  }
+
+  setSyncState('syncing');
+  try {
+    await set(ref(db, `rooms/${roomCode}/days/${key}`), currentData);
+    dequeue(key);
+    setSyncState('connected');
+    msg.textContent = 'تم ✓';
+    setTimeout(() => msg.textContent = '', 2000);
+  } catch(e) {
+    queueSync(key);
+    setSyncState('offline');
+    msg.textContent = '📴 محلياً';
+    setTimeout(() => msg.textContent = '', 3000);
+  }
+};
+
+window.changeDay = (dir) => { dayOffset += dir; loadDay(); };
+
+window.addEventListener('online', async () => { if (db) { await flushQueue(); loadDay(); } });
+window.addEventListener('offline', () => setSyncState('offline'));
+
+function startApp() {
+  loadDay();
+  if (navigator.onLine) {
+    try {
+      const fbApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+      db = getDatabase(fbApp);
+      flushQueue().then(() => loadDay());
+    } catch(e) { setSyncState('offline'); }
+  }
+}
+
+startApp();
+
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE = 'ikhlaa-v4';
+    const URLS = [location.href];
+    self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(URLS).catch(()=>{}))); self.skipWaiting(); });
+    self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
+    self.addEventListener('fetch', e => {
+      e.respondWith(fetch(e.request).then(res => { const clone = res.clone(); caches.open(CACHE).then(c => c.put(e.request, clone)); return res; }).catch(() => caches.match(e.request)));
+    });
+  `;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+}
+</script>
+</body>
+</html>
